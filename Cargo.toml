@@ -9,3 +9,4 @@ dev-graph=[]
 [dependencies]
 halo2_proofs = { version="0.3.0", features=["dev-graph"]}
 plotters = "0.3.6"
+rand_core = "0.6.4"

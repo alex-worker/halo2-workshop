@@ -1,10 +1,19 @@
 use halo2_proofs::circuit::{Layouter, SimpleFloorPlanner, Value};
 use halo2_proofs::dev::MockProver;
 use halo2_proofs::pasta::group::ff::PrimeField;
-use halo2_proofs::pasta::Fp;
-use halo2_proofs::plonk::{Advice, Circuit, Column, ConstraintSystem, Error, Expression, Selector};
+use halo2_proofs::pasta::{vesta, EqAffine, Fp};
+use halo2_proofs::plonk::{
+    create_proof, keygen_pk, keygen_vk, verify_proof, Advice, Circuit, Column, ConstraintSystem,
+    Error, Expression, Selector, SingleVerifier,
+};
+use halo2_proofs::poly::commitment::Params;
 use halo2_proofs::poly::Rotation;
+use halo2_proofs::transcript::{Blake2bRead, Blake2bWrite, Challenge255};
+use rand_core::OsRng;
+use std::fs::File;
+use std::io::Write;
 use std::marker::PhantomData;
+use std::path::Path;
 
 // x - a = 0
 
@@ -79,19 +88,59 @@ impl<const VAL: usize, F: PrimeField> Circuit<F> for MyCircuit<VAL, F> {
 const K: u32 = 3;
 
 fn main() {
-    const VALUE: usize = 8;
+    let params: Params<EqAffine> = halo2_proofs::poly::commitment::Params::new(K);
 
-    // x - VALUE = 0
+    let circuit = MyCircuit::<8, Fp>::construct(8);
 
-    let circuit = MyCircuit::<VALUE, Fp>::construct(8);
+    println!("Generating Verification Key");
+    let vk = keygen_vk(&params, &circuit).unwrap();
 
-    let prover = MockProver::<Fp>::run(K, &circuit, vec![]).unwrap();
-    assert!(prover.verify().is_ok());
+    // Generate proving key.
+    println!("Generating Proving Key from Verification Key");
+    let pk = keygen_pk(&params, vk, &circuit).unwrap();
+    let vk = pk.get_vk();
 
-    let circuit = MyCircuit::<VALUE, Fp>::construct(10);
+    let mut transcript = Blake2bWrite::<_, vesta::Affine, _>::init(vec![]);
 
-    let prover = MockProver::<Fp>::run(K, &circuit, vec![]).unwrap();
-    assert!(prover.verify().is_err());
+    println!("Generating Proof!");
+    create_proof(
+        &params,
+        &pk,
+        &[circuit],
+        &[&[]],
+        &mut OsRng,
+        &mut transcript,
+    )
+    .expect("Failed to create proof!");
+
+    let proof_path = "./proof";
+    let proof = transcript.finalize();
+
+    println!("Verifying proof...");
+    let strategy = SingleVerifier::new(&params);
+    let mut transcript = Blake2bRead::<_, _, Challenge255<_>>::init(&proof[..]);
+
+    verify_proof(&params, vk, strategy, &[&[]], &mut transcript).unwrap();
+
+    // File::create(Path::new(proof_path))
+    //     .expect("Failed to create proof file")
+    //     .write_all(&proof[..])
+    //     .expect("Failed to write proof");
+    // println!("Proof written to: {}", proof_path);
+
+    // const VALUE: usize = 8;
+    //
+    // // x - VALUE = 0
+    //
+    // let circuit = MyCircuit::<VALUE, Fp>::construct(8);
+    //
+    // let prover = MockProver::<Fp>::run(K, &circuit, vec![]).unwrap();
+    // assert!(prover.verify().is_ok());
+    //
+    // let circuit = MyCircuit::<VALUE, Fp>::construct(10);
+    //
+    // let prover = MockProver::<Fp>::run(K, &circuit, vec![]).unwrap();
+    // assert!(prover.verify().is_err());
 }
 
 #[cfg(test)]
