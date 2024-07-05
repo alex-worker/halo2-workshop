@@ -53,13 +53,15 @@ impl<F: PrimeField> BracketChip<F> {
 
             let s_input = meta.query_selector(config.s_input);
             let s_is_accum_zero = meta.query_selector(config.s_is_accum_zero);
+            // let s_not_minus_one = meta.query_selector(config.s_not_minus_one);
+
             let input = meta.query_advice(config.input, Rotation::cur());
             let prev = meta.query_advice(config.accum, Rotation::cur());
             let result = meta.query_advice(config.accum, Rotation::next());
 
             vec![
                 s_input * (prev.clone() + (_81 - _2 * input) - result),
-                s_is_accum_zero * prev,
+                s_is_accum_zero * prev
             ]
         });
 
@@ -239,5 +241,23 @@ mod tests {
             .unwrap()
             .verify()
             .unwrap_err();
+    }
+
+    // #[cfg(feature = "dev-graph")]
+    #[test]
+    fn plot_fibonacci1() {
+        use plotters::prelude::*;
+
+        let root = BitMapBackend::new("fib-1-layout.png", (1024, 3096)).into_drawing_area();
+        root.fill(&WHITE).unwrap();
+        let root = root.titled("Fib 1 Layout", ("sans-serif", 60)).unwrap();
+
+        let circuit = BracketCircuit::<2, Fq>::new([')', '(']);
+        halo2_proofs::dev::CircuitLayout::default()
+          .render(4, &circuit, &root)
+          .unwrap();
+
+        // let prover = MockProver::run(10, &BracketCircuit::<1, Fq>::new(['*']), vec![]).unwrap();
+        // halo2_proofs::dev::
     }
 }

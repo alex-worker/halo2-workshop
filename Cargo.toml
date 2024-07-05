@@ -3,5 +3,9 @@ name = "halo2-workshop"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+dev-graph=[]
+
 [dependencies]
-halo2_proofs = "0.3.0"
+halo2_proofs = { version="0.3.0", features=["dev-graph"]}
+plotters = "0.3.6"
