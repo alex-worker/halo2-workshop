@@ -92,8 +92,6 @@ impl<const VAL: usize, F: PrimeField> Circuit<F> for MyCircuit<VAL, F> {
     }
 }
 
-const K: u32 = 3;
-
 // Runs the mock prover and prints any errors
 fn run_mock_prover<const VAL: usize>(k: u32, circuit: &MyCircuit<VAL, Fp>) {
     let prover = MockProver::run(k, circuit, vec![]).expect("Mock prover should run");
@@ -145,6 +143,8 @@ pub fn verify(
 }
 
 fn main() {
+    const K: u32 = 3;
+
     let proof: Vec<u8>;
 
     const VALUE: usize = 8;
@@ -194,14 +194,14 @@ mod tests {
     const K: u32 = 3;
 
     #[test]
-    fn test_ok() {
+    fn test_error() {
         let circuit = MyCircuit::<8, Fp>::construct(10);
         let prover = MockProver::<Fp>::run(K, &circuit, vec![]).unwrap();
         assert!(prover.verify().is_err());
     }
 
     #[test]
-    fn test_error() {
+    fn test_ok() {
         let circuit = MyCircuit::<10, Fp>::construct(10);
         let prover = MockProver::<Fp>::run(K, &circuit, vec![]).unwrap();
         prover.assert_satisfied();
