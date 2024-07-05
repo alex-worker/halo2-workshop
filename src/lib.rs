@@ -243,7 +243,7 @@ mod tests {
             .unwrap_err();
     }
 
-    // #[cfg(feature = "dev-graph")]
+    #[cfg(feature = "dev-graph")]
     #[test]
     fn plot_fibonacci1() {
         use plotters::prelude::*;
