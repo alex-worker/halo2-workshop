@@ -14,7 +14,10 @@ pub fn run_mock_prover<const VAL: usize>(k: u32, circuit: &MyCircuit<VAL, Fp>) {
     let prover = MockProver::run(k, circuit, vec![]).expect("Mock prover should run");
     let res = prover.verify();
     match res {
-        Ok(()) => println!("MockProver OK"),
+        Ok(()) => {
+            println!("{:?}", prover);
+            println!("MockProver OK")
+        }
         Err(e) => println!("err {:#?}", e),
     }
 }
