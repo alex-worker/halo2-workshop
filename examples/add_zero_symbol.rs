@@ -243,6 +243,17 @@ mod tests {
     }
 
     #[test]
+    fn valid_all_zero() {
+        let r = MockProver::run(
+            K,
+            &BracketCircuit::<3, Fq>::new([ZERO_CHAR, ZERO_CHAR, ZERO_CHAR]),
+            vec![],
+        )
+        .unwrap();
+        r.assert_satisfied();
+    }
+
+    #[test]
     fn unvalid_order() {
         MockProver::run(K, &BracketCircuit::<2, Fq>::new([')', '(']), vec![])
             .unwrap()
