@@ -1,5 +1,4 @@
 use std::marker::PhantomData;
-use std::ops::Mul;
 
 use halo2_proofs::{
     circuit::{Layouter, SimpleFloorPlanner, Value},
@@ -14,13 +13,19 @@ use halo2_proofs::{
 // f(41) =
 
 // Sets the circuit, and also stores the private input
-pub struct BracketCircuit<const L: usize, F: PrimeField> {
-    input: [char; L],
+pub struct BracketCircuit<const MAX_SIZE: usize, F: PrimeField> {
+    input: [char; MAX_SIZE],
     _p: PhantomData<F>,
 }
 
-impl<const L: usize, F: PrimeField> BracketCircuit<L, F> {
-    pub fn new(input: [char; L]) -> Self {
+impl<const MAX_SIZE: usize, F: PrimeField> BracketCircuit<MAX_SIZE, F> {
+    pub fn new(input_str: &[char]) -> Self {
+        let mut input: [char; MAX_SIZE] = [0 as char; MAX_SIZE];
+        // assert!(input_str.len() <= MAX_SIZE);
+        if input_str.len() >= MAX_SIZE {
+            panic!("Length {:?} > MAX_SIZE {:}", input_str.len(), MAX_SIZE);
+        }
+        input[0..input_str.len()].clone_from_slice(input_str);
         Self {
             input,
             _p: PhantomData,
@@ -203,10 +208,11 @@ mod tests {
     const K: u32 = 10;
 
     const ZERO_CHAR: char = 0 as char;
+    const MAX_LENGTH: usize = 10;
 
     #[test]
     fn unvalid_sym() {
-        MockProver::run(K, &BracketCircuit::<1, Fq>::new(['*']), vec![])
+        MockProver::run(K, &BracketCircuit::<MAX_LENGTH, Fq>::new(&['*']), vec![])
             .unwrap()
             .verify()
             .unwrap_err();
@@ -214,17 +220,20 @@ mod tests {
 
     #[test]
     fn valid_1() {
-        let r = MockProver::run(K, &BracketCircuit::<2, Fq>::new(['(', ')']), vec![]).unwrap();
+        let r = MockProver::run(
+            K,
+            &BracketCircuit::<MAX_LENGTH, Fq>::new(&['(', ')']),
+            vec![],
+        )
+        .unwrap();
         r.assert_satisfied();
-        // .verify()
-        // .unwrap();
     }
 
     #[test]
     fn valid_2() {
         let r = MockProver::run(
             K,
-            &BracketCircuit::<3, Fq>::new(['(', 0 as char, ')']),
+            &BracketCircuit::<MAX_LENGTH, Fq>::new(&['(', 0 as char, ')']),
             vec![],
         )
         .unwrap();
@@ -235,7 +244,9 @@ mod tests {
     fn valid_3() {
         let r = MockProver::run(
             K,
-            &BracketCircuit::<6, Fq>::new([ZERO_CHAR, ZERO_CHAR, '(', ZERO_CHAR, ')', ZERO_CHAR]),
+            &BracketCircuit::<MAX_LENGTH, Fq>::new(&[
+                ZERO_CHAR, ZERO_CHAR, '(', ZERO_CHAR, ')', ZERO_CHAR,
+            ]),
             vec![],
         )
         .unwrap();
@@ -246,7 +257,7 @@ mod tests {
     fn valid_all_zero() {
         let r = MockProver::run(
             K,
-            &BracketCircuit::<3, Fq>::new([ZERO_CHAR, ZERO_CHAR, ZERO_CHAR]),
+            &BracketCircuit::<MAX_LENGTH, Fq>::new(&[ZERO_CHAR, ZERO_CHAR, ZERO_CHAR]),
             vec![],
         )
         .unwrap();
@@ -254,11 +265,28 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    fn unvalid_string_length() {
+        const MAX_LENGTH: usize = 3;
+        let input_str = ['(', ZERO_CHAR, ZERO_CHAR, ZERO_CHAR, ')'];
+        MockProver::run(
+            K,
+            &BracketCircuit::<MAX_LENGTH, Fq>::new(&input_str),
+            vec![],
+        )
+        .unwrap();
+    }
+
+    #[test]
     fn unvalid_order() {
-        MockProver::run(K, &BracketCircuit::<2, Fq>::new([')', '(']), vec![])
-            .unwrap()
-            .verify()
-            .unwrap_err();
+        MockProver::run(
+            K,
+            &BracketCircuit::<MAX_LENGTH, Fq>::new(&[')', '(']),
+            vec![],
+        )
+        .unwrap()
+        .verify()
+        .unwrap_err();
     }
 }
 
