@@ -210,6 +210,32 @@ mod tests {
     const MAX_LENGTH: usize = 10;
 
     #[test]
+    fn unvalid_last_accum_open() {
+        let input_str = ['(', '(', ')'];
+        MockProver::run(
+            K,
+            &BracketCircuit::<MAX_LENGTH, Fq>::new(&input_str),
+            vec![],
+        )
+        .unwrap()
+        .verify()
+        .unwrap_err();
+    }
+
+    #[test]
+    fn unvalid_last_accum_close() {
+        let input_str = ['(', ')', ')'];
+        MockProver::run(
+            K,
+            &BracketCircuit::<MAX_LENGTH, Fq>::new(&input_str),
+            vec![],
+        )
+        .unwrap()
+        .verify()
+        .unwrap_err();
+    }
+
+    #[test]
     fn unvalid_sym() {
         let input_str = ['*'];
         MockProver::run(
@@ -236,7 +262,7 @@ mod tests {
 
     #[test]
     fn valid_2() {
-        let input_str = ['(', 0 as char, ')'];
+        let input_str = ['(', ZERO_CHAR, ')'];
         let r = MockProver::run(
             K,
             &BracketCircuit::<MAX_LENGTH, Fq>::new(&input_str),
