@@ -168,7 +168,6 @@ impl<const L: usize, F: PrimeField> Circuit<F> for BracketCircuit<L, F> {
                         config.s_input.enable(&mut region, offset)?;
 
                         region.assign_advice(|| "input", config.input, offset, || input_symbol)?;
-
                         // f(x) = 81 - 2 * x
                         // f(x) = (-x * (81 * x - 3281)) / 1640
 
@@ -189,7 +188,7 @@ impl<const L: usize, F: PrimeField> Circuit<F> for BracketCircuit<L, F> {
                         Result::<_, plonk::Error>::Ok(acc_value)
                     })?;
 
-                //config.s_is_accum_zero.enable(&mut region, L)?;
+                // config.s_is_accum_zero.enable(&mut region, L)?;
 
                 Ok(())
             },
@@ -212,17 +211,23 @@ mod tests {
 
     #[test]
     fn unvalid_sym() {
-        MockProver::run(K, &BracketCircuit::<MAX_LENGTH, Fq>::new(&['*']), vec![])
-            .unwrap()
-            .verify()
-            .unwrap_err();
+        let input_str = ['*'];
+        MockProver::run(
+            K,
+            &BracketCircuit::<MAX_LENGTH, Fq>::new(&input_str),
+            vec![],
+        )
+        .unwrap()
+        .verify()
+        .unwrap_err();
     }
 
     #[test]
     fn valid_1() {
+        let input_str = ['(', ')'];
         let r = MockProver::run(
             K,
-            &BracketCircuit::<MAX_LENGTH, Fq>::new(&['(', ')']),
+            &BracketCircuit::<MAX_LENGTH, Fq>::new(&input_str),
             vec![],
         )
         .unwrap();
@@ -231,9 +236,10 @@ mod tests {
 
     #[test]
     fn valid_2() {
+        let input_str = ['(', 0 as char, ')'];
         let r = MockProver::run(
             K,
-            &BracketCircuit::<MAX_LENGTH, Fq>::new(&['(', 0 as char, ')']),
+            &BracketCircuit::<MAX_LENGTH, Fq>::new(&input_str),
             vec![],
         )
         .unwrap();
@@ -242,11 +248,10 @@ mod tests {
 
     #[test]
     fn valid_3() {
+        let input_str = [ZERO_CHAR, ZERO_CHAR, '(', ZERO_CHAR, ')', ZERO_CHAR];
         let r = MockProver::run(
             K,
-            &BracketCircuit::<MAX_LENGTH, Fq>::new(&[
-                ZERO_CHAR, ZERO_CHAR, '(', ZERO_CHAR, ')', ZERO_CHAR,
-            ]),
+            &BracketCircuit::<MAX_LENGTH, Fq>::new(&input_str),
             vec![],
         )
         .unwrap();
@@ -255,9 +260,10 @@ mod tests {
 
     #[test]
     fn valid_all_zero() {
+        let input_str = [ZERO_CHAR, ZERO_CHAR, ZERO_CHAR];
         let r = MockProver::run(
             K,
-            &BracketCircuit::<MAX_LENGTH, Fq>::new(&[ZERO_CHAR, ZERO_CHAR, ZERO_CHAR]),
+            &BracketCircuit::<MAX_LENGTH, Fq>::new(&input_str),
             vec![],
         )
         .unwrap();
@@ -279,9 +285,10 @@ mod tests {
 
     #[test]
     fn unvalid_order() {
+        let input_str = [')', '('];
         MockProver::run(
             K,
-            &BracketCircuit::<MAX_LENGTH, Fq>::new(&[')', '(']),
+            &BracketCircuit::<MAX_LENGTH, Fq>::new(&input_str),
             vec![],
         )
         .unwrap()
