@@ -22,7 +22,7 @@ impl<const MAX_SIZE: usize, F: PrimeField> BracketCircuit<MAX_SIZE, F> {
     pub fn new(input_str: &[char]) -> Self {
         let mut input: [char; MAX_SIZE] = [0 as char; MAX_SIZE];
         // assert!(input_str.len() <= MAX_SIZE);
-        if input_str.len() >= MAX_SIZE {
+        if input_str.len() > MAX_SIZE {
             panic!("Length {:?} > MAX_SIZE {:}", input_str.len(), MAX_SIZE);
         }
         input[0..input_str.len()].clone_from_slice(input_str);
@@ -323,6 +323,19 @@ mod tests {
         .unwrap()
         .verify()
         .unwrap_err();
+    }
+
+    #[test]
+    fn complex_valid() {
+        let input_str = ['(', '(', ')', '(', '(', ')', ')', '(', ')', ')'];
+        MockProver::run(
+            K,
+            &BracketCircuit::<MAX_LENGTH, Fq>::new(&input_str),
+            vec![],
+        )
+        .unwrap()
+        .verify()
+        .unwrap();
     }
 }
 
