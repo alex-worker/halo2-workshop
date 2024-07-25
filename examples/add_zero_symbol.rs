@@ -77,17 +77,20 @@ impl<const L: usize, F: PrimeField> Circuit<F> for BracketCircuit<L, F> {
             let _1640_inv = Expression::Constant(F::from(1640).invert().unwrap_or_else(|| F::ZERO));
 
             let s_input = meta.query_selector(config.s_input);
-            let s_is_accum_zero = meta.query_selector(config.s_is_accum_zero);
+
             let x = meta.query_advice(config.input, Rotation::cur());
             let prev = meta.query_advice(config.accum, Rotation::cur());
             let result = meta.query_advice(config.accum, Rotation::next());
 
             let expression = (-x.clone() * (_81 * x - _3281)) * _1640_inv - result;
 
-            vec![
-                s_input * (prev.clone() + expression),
-                s_is_accum_zero * prev,
-            ]
+            vec![s_input * (prev.clone() + expression)]
+        });
+
+        meta.create_gate("accumulation zero check", |meta| {
+            let prev = meta.query_advice(config.accum, Rotation::cur());
+            let s_is_accum_zero = meta.query_selector(config.s_is_accum_zero);
+            vec![s_is_accum_zero * prev]
         });
 
         meta.create_gate("check_accum", |meta| {
@@ -188,7 +191,7 @@ impl<const L: usize, F: PrimeField> Circuit<F> for BracketCircuit<L, F> {
                         Result::<_, plonk::Error>::Ok(acc_value)
                     })?;
 
-                // config.s_is_accum_zero.enable(&mut region, L)?;
+                config.s_is_accum_zero.enable(&mut region, L)?;
 
                 Ok(())
             },
